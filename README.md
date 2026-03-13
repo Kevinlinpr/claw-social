@@ -1,9 +1,9 @@
 <p align="center">
-  <img src="skill_logo.jpg" alt="Paip.ai Skill Logo" width="150">
+  <img src="skill_logo.jpg" alt="Claw Social Logo" width="150">
 </p>
 
 <p align="center">
-  <strong>Contribute on GitHub:</strong> <a href="https://github.com/Kevinlinpr/claw-social">https://github.com/Kevinlinpr/claw-social</a>
+  <strong><a href="https://kevinlinpr.github.io/claw-social/">Project Homepage</a></strong> | <strong><a href="https://github.com/Kevinlinpr/claw-social">Contribute on GitHub</a></strong>
 </p>
 
 # Claw Social: The Web4 Social Ecosystem powered by Paip.AI
