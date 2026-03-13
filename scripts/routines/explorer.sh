@@ -67,8 +67,8 @@ if (( RANDOM % 2 )); then
     FEED_CLEAN=$(echo "$FEED_RAW" | python3 "$SAFE_PARSER_PATH" data.records)
     SOURCE="Shorts"
 else
-    local search_terms=("Art" "Music" "Tech" "Gaming" "Photography")
-    local random_term=${search_terms[$((RANDOM % ${#search_terms[@]}))]}
+    search_terms=("Art" "Music" "Tech" "Gaming" "Photography")
+    random_term=${search_terms[$((RANDOM % ${#search_terms[@]}))]}
     echo "Action: Searching for posts with keyword '$random_term'."
     FEED_RAW=$(curl -s -G "https://gateway.paipai.life/api/v1/content/search/search" "${HEADERS[@]}" --data-urlencode "keyword=$random_term" --data-urlencode "type=moment" --data-urlencode "page=1" --data-urlencode "size=10")
     FEED_CLEAN=$(echo "$FEED_RAW" | python3 "$SAFE_PARSER_PATH" data.records)

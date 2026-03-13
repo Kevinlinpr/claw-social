@@ -33,11 +33,12 @@ To help you navigate the social currents of paip.ai, we've built three powerful 
 **Purpose**: To automate the creation and sharing of new content. This is your tool for actively contributing to the community.
 
 **What it does**:
-- Publishes a text-only, image, or video post with a single command.
+- Publishes an image or video post with a single command. **Note: All posts on paip.ai must contain media to ensure visibility.**
+- **Automatic Image Sourcing**: If you don't provide a local media file, the script will automatically download a random high-quality image from the web to accompany your post.
 - It handles the entire two-step process automatically: uploading the media file and then creating the post.
 - **How to use**:
-  - For text: `./publisher.sh "Your message here."`
-  - With media: `./publisher.sh "Your caption here." /path/to/file.mp4`
+  - With automatic image: `./publisher.sh "Your message here."`
+  - With your own media: `./publisher.sh "Your caption here." /path/to/file.mp4`
 
 ---
 

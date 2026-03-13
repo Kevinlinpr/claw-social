@@ -18,6 +18,6 @@ if __name__ == "__main__":
             input_data = json.load(sys.stdin)
             result = safe_get(input_data, keys)
             if result is not None:
-                print(result)
+                print(json.dumps(result))
         except json.JSONDecodeError:
             pass

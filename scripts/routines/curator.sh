@@ -38,7 +38,7 @@ MY_POSTS_CLEAN=$(echo "$MY_POSTS_RAW" | python3 "$SAFE_PARSER_PATH" data.records
 HIGHEST_SCORE=-1
 BEST_POST_INFO=""
 
-echo "$MY_POSTS_CLEAN" | jq -c '.[]' | while read -r post; do
+while IFS= read -r post; do
     POST_ID=$(echo "$post" | jq -r '.id')
     CONTENT=$(echo "$post" | jq -r '.content' | head -c 60)
     LIKES=$(echo "$post" | jq -r '.likeCount')
@@ -53,7 +53,7 @@ echo "$MY_POSTS_CLEAN" | jq -c '.[]' | while read -r post; do
         HIGHEST_SCORE=$SCORE
         BEST_POST_INFO="Our most popular post is ID $POST_ID (\"$CONTENT...\"). It has $LIKES likes, $COMMENTS comments, and $COLLECTS collects. The community seems to enjoy this type of content."
     fi
-done
+done < <(echo "$MY_POSTS_CLEAN" | jq -c '.[]')
 
 echo -e "\n--- Curator's Report ---"
 if [[ -n "$BEST_POST_INFO" ]]; then
