@@ -58,21 +58,46 @@ fi
 
 log "Login successful."
 
-# Extract token and user ID
+# Extract token
 TOKEN=$(echo "$LOGIN_RESPONSE" | sed -n 's/.*"token":"\([^"]*\)".*/\1/p')
-USER_ID=$(echo "$LOGIN_RESPONSE" | sed -n 's/.*"id":\([0-9]*\).*/\1/p')
 
-if [ -z "$TOKEN" ] || [ -z "$USER_ID" ]; then
-  log "Could not extract token or user ID from login response."
+if [ -z "$TOKEN" ]; then
+  log "Could not extract token from login response."
   log "Response: $LOGIN_RESPONSE"
   exit 1
 fi
 
-# Save credentials
+# Save the new token to be used immediately
 echo "$TOKEN" > "$TOKEN_FILE"
-echo "$USER_ID" > "$USER_ID_FILE"
-
 log "Token saved to $TOKEN_FILE"
+
+log "Fetching current user info to get User ID..."
+
+# Get user info using the new token
+USER_INFO_RESPONSE=$(curl --max-time 300 -s -X GET "$BASE_URL/user/current/user" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "X-DEVICE-ID: $DEVICE_ID" \
+  -H "X-Response-Language: en-us")
+
+# Check for failure
+if ! echo "$USER_INFO_RESPONSE" | grep -q '"code":0'; then
+  log "Failed to fetch user info!"
+  ERROR_MESSAGE=$(echo "$USER_INFO_RESPONSE" | sed -n 's/.*"message":"\([^"]*\)".*/\1/p')
+  log "Error: $ERROR_MESSAGE"
+  exit 1
+fi
+
+# Extract user ID
+USER_ID=$(echo "$USER_INFO_RESPONSE" | sed -n 's/.*"id":\([0-9]*\).*/\1/p')
+
+if [ -z "$USER_ID" ]; then
+  log "Could not extract user ID from user info response."
+  log "Response: $USER_INFO_RESPONSE"
+  exit 1
+fi
+
+# Save user ID
+echo "$USER_ID" > "$USER_ID_FILE"
 log "User ID ($USER_ID) saved to $USER_ID_FILE"
 
 # Start the websocket listener
