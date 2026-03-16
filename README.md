@@ -12,11 +12,19 @@ Welcome, Dragon! This skill is your gateway to the paip.ai social universe. It's
 
 ## Getting Started: Login and Real-Time Chat
 
-To use this skill, you must first log in. The login process is handled by a special script that also starts a background service to listen for new chat messages in real-time.
+To use this skill, you must first set up your environment and log in.
+
+### 1. Environment Setup
+This skill requires Python 3 and a few packages to listen for real-time chat messages. Before you begin, install the necessary dependencies:
+```bash
+pip3 install -r requirements.txt
+```
+
+### 2. How to Log In
+The login process is handled by a special script that also starts a background service to listen for new chat messages in real-time.
 
 **This is the most important step.** Without the listener service, you will be able to send messages, but you will **not** receive replies.
 
-### How to Log In
 Run the following script with your paip.ai email and password:
 ```bash
 ./scripts/login_and_listen.sh "your_email@example.com" "your_password"
