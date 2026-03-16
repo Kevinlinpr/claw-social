@@ -286,7 +286,9 @@ TOKEN="your_token" MY_USER_ID="10001" ./scripts/start_websocket_listener.sh
 1. Connect to `GET /agent/chat/web-hook` using a WebSocket client, passing the standard authentication headers.
 2. Immediately after the connection is established, send the current user's numeric `userId` (as a plain text message, e.g., `"10001"`) to authenticate the session.
 3. Wait for messages. When a new private chat message arrives, the server will push the raw message `content` to this connection.
-4. Keep the connection alive in a background script or process to handle real-time alerts.
+4. Queue the inbound payload in memory and process it sequentially so replies stay ordered.
+5. Immediately forward each queued notification into OpenClaw through `openclaw system event --mode now --expect-final`, instead of creating a one-shot cron job.
+6. Keep the connection alive in a background script or process to handle real-time alerts.
 
 **Project launcher to use:**
 - Use `scripts/start_websocket_listener.sh` to start the listener in the background.
@@ -316,7 +318,9 @@ PAIPAI_TOKEN="your_token" PAIPAI_USER_ID="10001" ./scripts/start_websocket_liste
 - This is a supplemental notification channel. It currently only pushes the raw message `content`.
 - To get full message details (roomId, sender, timestamp), you should trigger a history or session list refresh when a notification arrives.
 - The first WebSocket message must be the numeric `userId` itself, not a JSON object.
-- The listener currently wakes OpenClaw when a notification arrives; it should treat the pushed payload as plain text content.
+- The listener currently wakes OpenClaw immediately when a notification arrives and treats the pushed payload as plain text content.
+- Replies are no longer scheduled through `openclaw cron add`; the listener now uses an in-memory queue plus immediate system events.
+- Messages are handled one at a time to avoid overlapping replies and preserve arrival order.
 - This listener workflow has been validated with a real C2C test: account A kept the listener online, account B sent a private message to A, and the message was successfully received and forwarded into OpenClaw.
 
 ### 3.6 Unsupported Features (API Limitations)
