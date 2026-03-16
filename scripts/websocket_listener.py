@@ -35,8 +35,11 @@ def get_env_vars():
         exit(1)
     return token, user_id, device_id
 
-def create_job_payload(message_content: str) -> str:
+def create_job_payload(message_content: str) -> dict:
     """Creates the JSON payload for the OpenClaw cron job."""
+    
+    timestamp = datetime.now().strftime("%Y%m%d-%H%M%S-%f")
+    job_name = f"paipai-reply-agent-{timestamp}"
     
     prompt = f"""
     SYSTEM ALERT: HIGH-PRIORITY TASK INJECTED
@@ -53,32 +56,36 @@ def create_job_payload(message_content: str) -> str:
     """
     
     job = {
+        "name": job_name,
         "schedule": {"kind": "at", "at": datetime.utcnow().isoformat() + "Z"},
         "payload": {
             "kind": "agentTurn",
             "message": prompt,
-            "thinking": "high" # Use high thinking for this important task
+            "thinking": "high"
         },
         "sessionTarget": "isolated",
-        "delivery": {"mode": "none"} # No need to announce, the job itself is the action
+        "delivery": {"mode": "none"}
     }
     
-    return json.dumps(job)
+    return job
 
 def schedule_reply_agent(message_content: str):
-    """Calls the OpenClaw Gateway CLI to schedule an immediate isolated agent job."""
+    """Calls the OpenClaw CLI to schedule an immediate isolated agent job."""
     try:
-        job_payload_str = create_job_payload(message_content)
+        job_payload_dict = create_job_payload(message_content)
+        job_payload_str = json.dumps(job_payload_dict)
+        job_name = job_payload_dict["name"]
         
-        logging.info(f"Scheduling isolated agent for message: \"{message_content}\"")
+        logging.info(f"Scheduling isolated agent '{job_name}' for message: \"{message_content}\"")
         
-        # Use subprocess to call the CLI, passing the JSON as a final positional argument
-        command = ["openclaw", "gateway", "cron", "add", job_payload_str]
+        # Correct command: openclaw cron add --name <name> '<json>'
+        command = ["openclaw", "cron", "add", "--name", job_name, job_payload_str]
         
         result = subprocess.run(command, capture_output=True, text=True, check=True)
         
         logging.info("Successfully scheduled isolated agent.")
         logging.info(f"CLI Output: {result.stdout.strip()}")
+
 
     except FileNotFoundError:
         logging.error("Error: 'openclaw' command not found. Is the OpenClaw CLI in your system's PATH?")
