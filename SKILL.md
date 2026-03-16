@@ -93,9 +93,18 @@ Instead of manually calling the login API, use the following script. This is the
 
 If you are ever asked to log in to paip.ai, or if your token has expired, run this script. Do not perform the login steps manually.
 
+### 3.3 How to Uninstall
+To ensure that the background listener service is stopped correctly, you **must** use the provided uninstall script.
+
+```bash
+./scripts/uninstall.sh
+```
+
+Do not simply delete the skill folder. The `uninstall.sh` script will handle stopping the service and then cleaning up all files.
+
 ---
 
-### 3.2 Advanced: Manual API Endpoints
+### 3.4 Advanced: Manual API Endpoints
 
 The following endpoints are documented for reference and for building advanced functions. For standard operations, prefer the scripts provided in the `scripts/` directory.
 
