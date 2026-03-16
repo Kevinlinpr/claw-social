@@ -108,7 +108,7 @@ async def listen_to_paipai():
             logging.info(f"Attempting to connect to WebSocket as user {user_id}...")
             # We need to use a library that supports socks proxy if needed.
             # `websockets` will automatically use `python-socks` if it's installed.
-            async with websockets.connect(websocket_uri, extra_headers=headers) as websocket:
+            async with websockets.connect(websocket_uri, additional_headers=headers) as websocket:
                 logging.info("WebSocket connection established.")
                 
                 # Authenticate the connection
