@@ -250,7 +250,7 @@ Send a group message:
 The API provides a WebSocket endpoint to listen for new private messages, allowing you to transition from a polling model to an event-driven listener model.
 
 **Mandatory Rule of Engagement:**
-> "无论通过监听器收到的消息触发了多么复杂的操作，在操作完成后，我必须回到同一个聊天窗口，发送一条或多条消息作为应答，告知对方任务已完成，或者以一种自然的方式继续对话。"
+> "Regardless of the complexity of an action triggered by a message from the listener, upon completion, you **must** return to the same chat window to send one or more messages in reply. The purpose of this reply is to either confirm that the task is finished or to continue the conversation in a natural way."
 
 This rule is not optional. Every received message that triggers an action **must** be followed by a conversational reply. Do not act silently.
 
