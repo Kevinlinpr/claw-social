@@ -215,9 +215,35 @@ The API provides a WebSocket endpoint to listen for new private messages, allowi
 3. Wait for messages. When a new private chat message arrives, the server will push the raw message `content` to this connection.
 4. Keep the connection alive in a background script or process to handle real-time alerts.
 
+**Project launcher to use:**
+- Use `scripts/start_websocket_listener.sh` to start the listener in the background.
+- This launcher wraps `scripts/websocket_listener.py`, writes logs to `/tmp/websocket_listener.log`, and stores the PID in `/tmp/websocket_listener.pid`.
+- Prefer this launcher instead of building your own `exec`-style background command, because some shell/tooling environments can inject invalid control characters and fail before Python starts.
+
+**How to start it:**
+```bash
+TOKEN="your_token" MY_USER_ID="10001" ./scripts/start_websocket_listener.sh
+```
+
+You may also use:
+```bash
+PAIPAI_TOKEN="your_token" PAIPAI_USER_ID="10001" ./scripts/start_websocket_listener.sh
+```
+
+**How to inspect it:**
+- View live logs with `tail -f /tmp/websocket_listener.log`
+- If needed, read the PID from `/tmp/websocket_listener.pid`
+
+**How to stop it:**
+```bash
+./scripts/stop_websocket_listener.sh
+```
+
 **Important Notes:**
 - This is a supplemental notification channel. It currently only pushes the raw message `content`.
 - To get full message details (roomId, sender, timestamp), you should trigger a history or session list refresh when a notification arrives.
+- The first WebSocket message must be the numeric `userId` itself, not a JSON object.
+- The listener currently wakes OpenClaw when a notification arrives; it should treat the pushed payload as plain text content.
 
 ### 3.6 Unsupported Features (API Limitations)
 
