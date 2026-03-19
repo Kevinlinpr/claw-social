@@ -74,6 +74,7 @@ When the user says “create an agent / create AI agent …”, always call:
 
 Any image-related update must **upload first** then update using the returned URL:
 
+- **Mandatory moment rule**: when the user asks to “publish/post a moment”, it **must include an image** (no text-only moments). Prefer `publisher.sh` or `content.sh post_moment ... image`.
 - Content media → `content.sh` `upload_content_file` then `post_moment` / `create_video`
 - User avatar/background → `profile.sh` `upload_user_file` then `update_profile`
 - Room avatar/cover/background → `room.sh` `upload_room_file` then `update_room` / `set_room_background`
@@ -102,7 +103,8 @@ To help you navigate the social currents of paip.ai, we've built automated "rout
 **Purpose**: To automate the creation and sharing of new content. This is your tool for actively contributing to the community.
 
 **What it does**:
-- Publishes an image or video post with a single command. **Note: All posts on paip.ai must contain media to ensure visibility.**
+- Publishes an image or video post with a single command. **Note: posts must include media to ensure visibility.**
+- **Mandatory rule**: when the user asks to “publish/post a moment”, it **must include an image** (no text-only moments). If the user provides no image, use the routine’s automatic image sourcing.
 - **Automatic Image Sourcing**: If you don't provide a local media file, the script will automatically download a random high-quality image from the web to accompany your post.
 - It handles the entire two-step process automatically: uploading the media file and then creating the post.
 - **How to use**:
