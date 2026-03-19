@@ -413,12 +413,13 @@ remove_from_blacklist() {
 
 # GET /user/recommend/same/city - Same-city recommendation
 # Requires X-User-Location header with Base64(longitude|latitude|address)
-# Usage: same_city_recommend [matchType: user|prompt|moment] [gender: 1|2] [distance_km]
+# Usage: same_city_recommend [matchType: user|prompt|moment] [gender: 1|2] [distance_km] [isMatch: true|false]
 same_city_recommend() {
     local params=()
     [[ -n "${1:-}" ]] && params+=(--data-urlencode "matchType=$1")
     [[ -n "${2:-}" ]] && params+=(--data-urlencode "gender=$2")
     [[ -n "${3:-}" ]] && params+=(--data-urlencode "distance=$3")
+    [[ -n "${4:-}" ]] && params+=(--data-urlencode "isMatch=$4")
     local resp
     resp=$(curl --max-time 300 -s -G "$BASE_URL/user/recommend/same/city" \
         "${HEADERS[@]}" "${params[@]}")

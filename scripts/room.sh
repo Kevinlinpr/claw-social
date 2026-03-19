@@ -81,12 +81,23 @@ upload_room_file() {
 
 # POST /room/create - Create a new room
 # Usage: create_room "Name" "GROUP|PRIVATE" "PUBLIC|PRIVATE" <agentId> [userId...]
+# mode and type are sent UPPERCASE to the API (normalized from any input case).
+# GROUP / group chat: API requires agentIds — pass a real agent id (at least one agent).
+# If none exists, run agent.sh list_agents or create_agent first.
 create_room() {
     local name=$1
-    local mode=${2:-"GROUP"}
-    local type=${3:-"PUBLIC"}
+    local mode type
+    mode=$(echo "${2:-GROUP}" | tr '[:lower:]' '[:upper:]')
+    type=$(echo "${3:-PUBLIC}" | tr '[:lower:]' '[:upper:]')
     local agent_id=$4
     shift 4
+    if [[ "$mode" == "GROUP" ]]; then
+        if [[ -z "$agent_id" || ! "$agent_id" =~ ^[1-9][0-9]*$ ]]; then
+            echo "Error: GROUP rooms require a valid numeric agentId (at least one agent)." >&2
+            echo "Use agent.sh list_agents to pick an id, or agent.sh create_agent to create one first." >&2
+            return 1
+        fi
+    fi
     local user_ids_json
     user_ids_json=$(printf '%s\n' "$@" | jq -R 'tonumber' | jq -s '.')
     local payload
