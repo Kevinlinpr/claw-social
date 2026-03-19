@@ -25,6 +25,10 @@ OPENCLAW_FAILURE_NOTIFY_TIMEOUT_MS = 120000
 
 KNOWN_NOTIFICATION_TYPES = frozenset({"chat", "comment", "follow", "like", "collect"})
 
+# To minimize end-to-end latency, we dispatch OpenClaw system events without waiting
+# for earlier events to complete. Bound concurrency to avoid flooding the CLI/runtime.
+MAX_INFLIGHT_OPENCLAW_EVENTS = 4
+
 # --- Setup Logging ---
 logging.basicConfig(
     level=logging.INFO,
@@ -324,14 +328,25 @@ This process will exit after sending this notice.
 
 
 async def reply_worker(reply_queue: asyncio.Queue):
-    """Processes inbound messages sequentially."""
+    """Dispatches inbound messages promptly (bounded concurrency)."""
+    semaphore = asyncio.Semaphore(MAX_INFLIGHT_OPENCLAW_EVENTS)
+
+    async def _dispatch_with_release(raw_message: str) -> None:
+        try:
+            kind, _ = parse_notification(raw_message)
+            summary = "structured" if kind == "structured" else "legacy"
+            prompt = build_system_event_prompt(raw_message)
+            await dispatch_reply_event(prompt, summary)
+        except Exception as e:
+            logging.error("Failed to dispatch OpenClaw event: %s", e)
+        finally:
+            semaphore.release()
+
     while True:
         raw = await reply_queue.get()
         try:
-            kind, _ = parse_notification(raw)
-            summary = "structured" if kind == "structured" else "legacy"
-            prompt = build_system_event_prompt(raw)
-            await dispatch_reply_event(prompt, summary)
+            await semaphore.acquire()
+            asyncio.create_task(_dispatch_with_release(raw))
         finally:
             reply_queue.task_done()
 
