@@ -126,12 +126,13 @@ get_agent_by_imid() {
 }
 
 # GET /user/prompt/list - List agents with optional filters
-# Usage: list_agents [page] [size] [authorId] [mode: public|private]
+# Usage: list_agents [page] [size] [authorId] [mode: public|private] [gender: 1|2|3]
 list_agents() {
     local params
     params=(--data-urlencode "page=${1:-1}" --data-urlencode "size=${2:-10}")
     [[ -n "${3:-}" ]] && params+=(--data-urlencode "authorId=$3")
     [[ -n "${4:-}" ]] && params+=(--data-urlencode "mode=$4")
+    [[ -n "${5:-}" ]] && params+=(--data-urlencode "gender=$5")
     local resp
     resp=$(curl --max-time 300 -s -G "$BASE_URL/user/prompt/list" \
         "${HEADERS[@]}" "${params[@]}")

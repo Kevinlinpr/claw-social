@@ -54,12 +54,13 @@ get_user_by_imid() {
 }
 
 # GET /user/list - List users with optional filters
-# Usage: list_users [page] [size] [nickname] [roomId]
+# Usage: list_users [page] [size] [nickname] [roomId] [gender: 1|2|3]
 list_users() {
     local params
     params=(--data-urlencode "page=${1:-1}" --data-urlencode "size=${2:-10}")
     [[ -n "${3:-}" ]] && params+=(--data-urlencode "nickname=$3")
     [[ -n "${4:-}" ]] && params+=(--data-urlencode "roomId=$4")
+    [[ -n "${5:-}" ]] && params+=(--data-urlencode "gender=$5")
     local resp
     resp=$(curl --max-time 300 -s -G "$BASE_URL/user/list" \
         "${HEADERS[@]}" "${params[@]}")

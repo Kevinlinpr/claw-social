@@ -4,6 +4,7 @@ import os
 import json
 import logging
 import re
+import threading
 from datetime import datetime
 from typing import Any, Dict, Tuple
 
@@ -24,6 +25,57 @@ KNOWN_NOTIFICATION_TYPES = frozenset({"chat", "comment", "follow", "like", "coll
 # To minimize end-to-end latency, we dispatch OpenClaw system events without waiting
 # for earlier events to complete. Bound concurrency to avoid flooding the CLI/runtime.
 MAX_INFLIGHT_OPENCLAW_EVENTS = 4
+
+# Agent dialog safety limit:
+# If a WebSocket chat comes from a senderUserType="agent", do not allow
+# unlimited back-and-forth. We cap the number of OpenClaw reply rounds per
+# senderUserId and instruct OpenClaw to end/no-reply after the cap.
+MAX_AGENT_DIALOG_ROUNDS = 20
+AGENT_DIALOG_ROUND_STATE_FILE = "/tmp/websocket_listener_agent_dialog_rounds.json"
+_agent_dialog_round_lock = threading.Lock()
+_agent_dialog_rounds: Dict[str, int] = {}
+
+
+def _load_agent_dialog_rounds() -> None:
+    global _agent_dialog_rounds
+    try:
+        if os.path.exists(AGENT_DIALOG_ROUND_STATE_FILE):
+            with open(AGENT_DIALOG_ROUND_STATE_FILE, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            if isinstance(data, dict):
+                _agent_dialog_rounds = {str(k): int(v) for k, v in data.items()}
+    except Exception as e:
+        logging.warning("Failed to load agent dialog rounds state: %s", e)
+
+
+def _save_agent_dialog_rounds() -> None:
+    try:
+        with open(AGENT_DIALOG_ROUND_STATE_FILE, "w", encoding="utf-8") as f:
+            json.dump(_agent_dialog_rounds, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        logging.warning("Failed to save agent dialog rounds state: %s", e)
+
+
+def _record_agent_dialog_round(sender_user_id: Any) -> Tuple[int, bool]:
+    """
+    Increments the reply-round counter for an agent sender (up to the cap).
+
+    Returns:
+      (round_number, reply_allowed)
+    where round_number is the current counter value after applying the cap logic.
+    """
+    sid = str(sender_user_id)
+    with _agent_dialog_round_lock:
+        prior = int(_agent_dialog_rounds.get(sid, 0))
+        if prior >= MAX_AGENT_DIALOG_ROUNDS:
+            return prior, False
+        now_round = prior + 1
+        _agent_dialog_rounds[sid] = now_round
+        _save_agent_dialog_rounds()
+        return now_round, True
+
+
+_load_agent_dialog_rounds()
 
 # --- Setup Logging ---
 logging.basicConfig(
@@ -118,8 +170,27 @@ def build_structured_prompt(notification: Dict[str, Any]) -> str:
         room_mode = content.get("roomMode", "")
         sender_nick = content.get("senderNickname", "")
         sender_id = content.get("senderUserId", "")
+        sender_user_type = content.get("senderUserType", "")
         content_type = content.get("contentType") or "text"
         msg = content.get("content", "")
+        agent_round_info = ""
+        reply_allowed = True
+        if str(sender_user_type).lower() == "agent":
+            round_number, reply_allowed = _record_agent_dialog_round(sender_id)
+            agent_round_info = (
+                f"\n\n**Agent dialog safety limit:** senderUserId={sender_id}, "
+                f"round={round_number}/{MAX_AGENT_DIALOG_ROUNDS}. "
+            )
+            if not reply_allowed:
+                agent_round_info += (
+                    "You MUST stop the conversation with this agent and MUST NOT send any "
+                    "message to them. Confirm when done."
+                )
+            elif round_number >= MAX_AGENT_DIALOG_ROUNDS:
+                agent_round_info += (
+                    "This is the final allowed round. Your reply MUST end the conversation "
+                    "and you MUST NOT reply to this agent again on subsequent notifications."
+                )
         im_hint = (
             "Use `chat.sh` `send_message` with `isSendToIm=true` for PRIVATE C2C "
             "per SKILL.md."
@@ -145,7 +216,7 @@ The server sent a structured WebSocket message (type=chat).
 **Your mandatory task:**
 1. **roomId is already known:** {room_id} (roomMode={room_mode}). Do NOT search session list just to find roomId.
 2. {inbound_line} (sender: {sender_nick}, senderUserId: {sender_id}).{image_preview}
-3. Formulate and send a reply using the known roomId. {im_hint}
+3. {('Formulate and send a reply using the known roomId. ' + im_hint) if reply_allowed else 'STOP: do not send any reply to this agent.'} {agent_round_info}
 4. Confirm when done.
 """.strip()
 
