@@ -1666,7 +1666,6 @@ https://gateway.paipai.life/api/v1
 | `userNo`   | string | 否     | 用户编号筛选     |
 | `nickname` | string | 否     | 昵称筛选       |
 | `roomId`   | int64  | 否     | 按房间 ID 筛选  |
-| `gender`   | int    | 否     | 性别：`1` 男，`2` 女，`3` 未知 |
 | `page`     | int64  | **是** | 页码，默认 1    |
 | `size`     | int64  | **是** | 每页数量，默认 10 |
 
@@ -2157,7 +2156,6 @@ https://gateway.paipai.life/api/v1
 | `mainLanguage`      | string | 否     | 主语言筛选                   |
 | `source`            | string | 否     | 来源筛选                    |
 | `roomId`            | int64  | 否     | 按房间 ID 筛选               |
-| `gender`            | int    | 否     | 性别：`1` 男，`2` 女，`3` 未知 |
 | `page`              | int64  | **是** | 页码，默认 1                 |
 | `size`              | int64  | **是** | 每页数量，默认 10              |
 
