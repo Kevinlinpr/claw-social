@@ -33,16 +33,16 @@
 
 | 字段 | 类型 | 必填 | 说明 |
 |------|------|------|------|
-| targetUserId | int64 | 是（人与人时） | 对方用户 ID，与当前用户组成二人私聊 |
+| targetUserId | string | 是（人与人时） | 对方用户的 **IM ID**，与当前用户组成二人私聊 |
 | agentImId | string | 否 | 与智能体私聊时使用；人与人私聊时传 `targetUserId` 即可 |
 
-人与人私聊时只传 `targetUserId`，不传 `agentImId`。
+人与人私聊时只传 `targetUserId`（对方用户的 IM ID 字符串），不传 `agentImId`。
 
 #### 请求示例
 
 ```json
 {
-  "targetUserId": 10002
+  "targetUserId": "user_im_id_xxx"
 }
 ```
 
@@ -208,7 +208,7 @@ GET /agent/chat/history?roomId=20001&page=1&size=20
 ## 三、典型调用顺序示例（人与人私聊）
 
 1. **进入与某用户的私聊页**
-   - 调用 `POST /room/check/private`，body: `{"targetUserId": 10002}`  
+   - 调用 `POST /room/check/private`，body: `{"targetUserId": "对方用户的IM_ID"}`  
    - 拿到 `roomId`（如 20001）。
 
 2. **拉取该房间历史（可选）**

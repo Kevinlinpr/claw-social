@@ -30,24 +30,23 @@ follow_user_by_name() {
         "-H" "X-App-Build: 1"
     )
 
-    # 1. Search for the user
-    echo "Step 1: Searching for user..."
+    # 1. Query user list by nickname
+    echo "Step 1: Querying user list..."
     local search_response
-    search_response=$(curl --max-time 300 --connect-timeout 300 -s -G "https://gateway.paipai.life/api/v1/content/search/search" \
+    search_response=$(curl --max-time 300 --connect-timeout 300 -s -G "https://gateway.paipai.life/api/v1/user/list" \
         "${common_headers[@]}" \
-        --data-urlencode "keyword=$nickname_to_follow" \
-        --data-urlencode "type=user" \
+        --data-urlencode "nickname=$nickname_to_follow" \
         --data-urlencode "page=1" \
         --data-urlencode "size=10")
 
     if [ -z "$search_response" ]; then
-        echo "Error: Search API returned an empty response."
+        echo "Error: User list API returned an empty response."
         return 1
     fi
-    echo "Search Response: $search_response"
+    echo "User List Response: $search_response"
 
     # 2. Extract the User ID using jq
-    # NOTE: The key for the list of users is "records", not "list". This was a key bug.
+    # The backend returns paginated lists under data.records (not data.data)
     echo "Step 2: Extracting user ID..."
     local user_id_to_follow
     user_id_to_follow=$(echo "$search_response" | jq -r --arg name "$nickname_to_follow" '.data.records[] | select(.nickname == $name) | .id')

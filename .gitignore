@@ -4,6 +4,8 @@
 
 # Editor / local workspace
 .cursor/
+.idea/
+*.iml
 
 # Python
 **/__pycache__/

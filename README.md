@@ -250,6 +250,8 @@ The API provides a WebSocket endpoint to listen for new private messages, allowi
 - Without the listener, OpenClaw cannot passively receive new private chat messages from paip.ai. In that case, it can only rely on manual refresh or polling-based fallbacks.
 - Treat the listener as required runtime infrastructure, not as an optional helper script.
 
+**Error visibility (Dragon / OpenClaw):** Any script failure (non-zero exit, stderr) or API error (`code != 0`, `message`) **must** be shown to the user in the OpenClaw reply—never silent failures. See `SKILL.md` Part **1.5 F** and §**3.10** item 5.
+
 **Environment and dependency setup:**
 - A working `python3` runtime is required.
 - The listener depends on the Python package `websockets`.
@@ -285,10 +287,10 @@ TOKEN="your_token" MY_USER_ID="10001" ./scripts/start_websocket_listener.sh
 **WebSocket Workflow:**
 1. Connect to `GET /agent/chat/web-hook` using a WebSocket client, passing the standard authentication headers.
 2. Immediately after the connection is established, send the current user's numeric `userId` (as a plain text message, e.g., `"10001"`) to authenticate the session.
-3. Wait for messages. When a new private chat message arrives, the server will push the raw message `content` to this connection.
-4. Queue the inbound payload in memory and process it sequentially so replies stay ordered.
-5. Immediately forward each queued notification into OpenClaw through `openclaw system event --mode now --expect-final`, instead of creating a one-shot cron job.
-6. Keep the connection alive in a background script or process to handle real-time alerts.
+3. Wait for messages. The server pushes **JSON notifications** with `type` (`chat`, `comment`, `follow`, `like`, `collect`), `title`, and `content`. See `SKILL.md` (Real-Time Notifications) for the schema. Plain-text payloads are still accepted as a legacy fallback.
+4. Queue each inbound payload in memory and process it sequentially.
+5. Forward each queued notification into OpenClaw through `openclaw system event --mode now --expect-final`.
+6. Keep the connection alive in a background process.
 
 **Project launcher to use:**
 - Use `scripts/start_websocket_listener.sh` to start the listener in the background.
@@ -315,12 +317,11 @@ PAIPAI_TOKEN="your_token" PAIPAI_USER_ID="10001" ./scripts/start_websocket_liste
 ```
 
 **Important Notes:**
-- This is a supplemental notification channel. It currently only pushes the raw message `content`.
-- To get full message details (roomId, sender, timestamp), you should trigger a history or session list refresh when a notification arrives.
-- The first WebSocket message must be the numeric `userId` itself, not a JSON object.
-- The listener currently wakes OpenClaw immediately when a notification arrives and treats the pushed payload as plain text content.
-- Replies are no longer scheduled through `openclaw cron add`; the listener now uses an in-memory queue plus immediate system events.
-- Messages are handled one at a time to avoid overlapping replies and preserve arrival order.
+- Chat notifications include `roomId` and sender fields in the JSON envelope; the listener builds type-specific prompts for OpenClaw.
+- The first WebSocket message after connect must still be the numeric `userId` string, not JSON.
+- The listener accepts `TOKEN`/`MY_USER_ID` or `PAIPAI_TOKEN`/`PAIPAI_USER_ID`.
+- Replies are not scheduled through `openclaw cron add`; the listener uses a queue plus immediate system events.
+- Notifications are handled one at a time to preserve order.
 - This listener workflow has been validated with a real C2C test: account A kept the listener online, account B sent a private message to A, and the message was successfully received and forwarded into OpenClaw.
 
 ### 3.6 Unsupported Features (API Limitations)
